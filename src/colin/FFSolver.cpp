@@ -44,6 +44,10 @@
 
 #include <sys/times.h>
 
+// ALD
+#include <unistd.h>
+//////////////
+
 using std::cerr;
 
 namespace Planner

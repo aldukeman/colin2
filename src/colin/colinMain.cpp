@@ -33,6 +33,16 @@
 
 #include <sstream>
 
+// ALD
+#include <unistd.h>
+
+// ALD: for memory usage and time
+//********
+#include <sys/resource.h>
+#include <chrono>
+//********
+////////////
+
 using std::ifstream;
 using std::cerr;
 using std::endl;
@@ -73,6 +83,8 @@ void usage(char * argv[])
     cout << "\t" << "-F" << "\t\t" << "Full FF helpful actions (rather than just those in the RP applicable in the current state);\n";
     cout << "\t" << "-r" << "\t\t" << "Read in a plan instead of planning;\n";
     cout << "\t" << "-T" << "\t\t" << "Rather than building a partial order, build a total-order\n";
+    cout << "\t" << "-a" << "\t\t" << "Plan output file\n";
+    cout << "\t" << "-y" << "\t\t" << "Timing output file\n";
     #ifdef STOCHASTICDURATIONS
     cout << "\t" << "-f<t>" << "\t\t" << "Force a deadline of t on each goal;\n";
     cout << "\t" << "-M<duration manager><samples>" << "\t\t" << "Use the named duration manager and number of samples (default: montecarlo10000)\n";
@@ -118,6 +130,9 @@ int main(int argc, char * argv[])
     FF::tsChecking = true;
 
     LPScheduler::workOutFactLayerZeroBoundsStraightAfterRecentAction = true;
+
+    const char* output_file = 0;
+    const char* timing_output_file_name = 0;
     
     while (argcount < argc && argv[argcount][0] == '-') {
 
@@ -354,6 +369,14 @@ int main(int argc, char * argv[])
                 break;
             }
             #endif
+            case 'a': { // ALD: plan output file...a was left
+                output_file = argv[++argcount];
+                break;
+            }
+            case 'y': { // ALD: record information on memory and timing
+                timing_output_file_name = argv[++argcount];
+                break;
+            }
             default:
                 cout << "Unrecognised command-line switch '" << argv[argcount][1] << "'\n";
                 usage(argv);
@@ -364,6 +387,9 @@ int main(int argc, char * argv[])
         }
         ++argcount;
     }
+
+    // ALD
+    std::chrono::system_clock::time_point start = std::chrono::system_clock::now();
 
     #ifdef STOCHASTICDURATIONS
     const int expectFromHere = 3;
@@ -461,12 +487,28 @@ int main(int argc, char * argv[])
                 cout << "; Cost: " << planAndConstraints.quality << endl;
             }
             
-            FFEvent::printPlan(*spSoln);
-            
+            if(output_file)
+            {
+                std::ofstream o_file(output_file);
+                FFEvent::printPlan(*spSoln, RPGHeuristic::statesEvaluated, planAndConstraints.quality, o_file);
+            }
+            else
+            {
+                FFEvent::printPlan(*spSoln);
+            }
         }
 
         if (benchmark) {
             FF::doBenchmark(reachesGoals, spSoln);
+        }
+
+        if(timing_output_file_name)
+        {
+            struct rusage r;
+            getrusage(RUSAGE_SELF, &r);
+            std::chrono::system_clock::time_point end = std::chrono::system_clock::now();
+            std::ofstream output(timing_output_file_name);
+            output << r.ru_maxrss << "," << std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count();
         }
 
         return 0;

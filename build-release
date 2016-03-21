@@ -1,4 +1,4 @@
 #!/bin/bash
 cd release
-make -j1 parser
-make -j4 colin-clp
+make -j12 parser
+make -j12 colin-clp

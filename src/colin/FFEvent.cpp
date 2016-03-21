@@ -36,10 +36,14 @@
 #include <sstream>
 #include <iostream>
 
+#include <sys/times.h>
+
+// ALD
+#include <unistd.h>
+/////////
+
 using std::ostringstream;
 using std::endl;
-
-#include <sys/times.h>
 
 namespace Planner {
 
@@ -175,7 +179,8 @@ string threeDP(double d)
     return toReturn.str();
 }
 
-void FFEvent::printPlan(const list<FFEvent> & toPrint)
+void FFEvent::printPlan(const list<FFEvent> & toPrint, int statesEvaluated, double quality, 
+    ostream& out)
 {
     tms refReturn;
     times(&refReturn);

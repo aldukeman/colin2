@@ -27,6 +27,8 @@
 #ifndef FFEVENT_H
 #define FFEVENT_H
 
+#include <limits>
+
 #include <ptree.h>
 
 namespace Inst {
@@ -90,9 +92,7 @@ public:
         return (action == f.action && time_spec == f.time_spec && minDuration == f.minDuration && maxDuration == f.maxDuration && pairWithStep == f.pairWithStep && getEffects == f.getEffects && divisionID == f.divisionID);
     }
 
-
-    static void printPlan(const list<FFEvent> & toPrint);
-
+    static void printPlan(const list<FFEvent> & toPrint, int statesEvaluated = 0, double quality = std::numeric_limits<double>::quiet_NaN(), ostream& out = std::cout);
 };
 
 };
