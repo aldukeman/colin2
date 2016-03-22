@@ -2,3 +2,7 @@
 cd debug
 make -j1 parser
 make -j4 colin-clp
+cd ../
+mkdir -p bin
+rm -f bin/colin-clp
+ln -s ../debug/colin/colin-clp bin/colin-clp

@@ -22,4 +22,4 @@ if (!(-e $prob)) {
   exit(1);
 }
 
-exec("$dir/release/colin/colin-clp", "-b", "-e", "-a", "$soln", "-y", "$timing", "$dom", "$prob")
+exec("$dir/bin/colin-clp", "-e", "-a", "$soln", "-y", "$timing", "$dom", "$prob")
