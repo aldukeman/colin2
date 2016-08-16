@@ -44,11 +44,14 @@
 
 #include <sys/times.h>
 
+//////////////
 // ALD
 #include <unistd.h>
+#include <sstream>
 //////////////
 
 using std::cerr;
+using std::stringstream;
 
 namespace Planner
 {
@@ -1628,6 +1631,82 @@ void populateTimestamps(vector<double> & minTimestamps, double & makespan, list<
     }
 }
 
+list<pair<double, list<ActionSegment> > > FF::generateRelaxedPlan(ExtendedMinimalState & theState, ExtendedMinimalState * prevState, set<int> & goals, set<int> & goalFluents, ParentData * const incrementalData, list<ActionSegment> & helpfulActions, list<FFEvent> & header, list<FFEvent> & now, const int & stepID, bool considerCache, map<double, list<pair<int, int> > > * justApplied, double tilFrom)
+{
+    LPScheduler tryToSchedule(theState.getInnerState(), header, now, stepID, theState.startEventQueue, incrementalData, theState.entriesForAction, (prevState ? &prevState->getInnerState().secondMin : 0), (prevState ? &prevState->getInnerState().secondMax : 0), &(theState.tilComesBefore), scheduleToMetric);
+
+    if (scheduleToMetric)
+    {
+        return list<pair<double, list<ActionSegment> > >();
+    }
+    
+    if (!tryToSchedule.isSolved())
+    {
+        return list<pair<double, list<ActionSegment> > >();
+    }
+
+    vector<double> timeAtWhichValueIsDefined;
+    
+    tryToSchedule.updateStateFluents(theState.getEditableInnerState().secondMin, theState.getEditableInnerState().secondMax, timeAtWhichValueIsDefined);
+
+    vector<double> extrapolatedMin, extrapolatedMax;
+    
+    if (LPScheduler::workOutFactLayerZeroBoundsStraightAfterRecentAction) {   
+        extrapolatedMin = theState.getEditableInnerState().secondMin;
+        extrapolatedMax = theState.getEditableInnerState().secondMax;
+        tryToSchedule.extrapolateBoundsAfterRecentAction(&(theState.startEventQueue), extrapolatedMin, extrapolatedMax, timeAtWhichValueIsDefined);
+    }
+    
+    
+    if (skipRPG) {
+        if (LPScheduler::workOutFactLayerZeroBoundsStraightAfterRecentAction) {   
+            theState.getEditableInnerState().secondMin.swap(extrapolatedMin);
+            theState.getEditableInnerState().secondMax.swap(extrapolatedMax);
+        }
+        return list<pair<double, list<ActionSegment> > >();
+    }
+
+    vector<double> minTimestamps(theState.getInnerState().planLength);
+    double makespan = 0.0;
+
+    populateTimestamps(minTimestamps, makespan, header, now);
+
+    list<pair<double, list<ActionSegment> > > relaxedPlan;
+
+    //printState(theState);
+    static int oldBestH = INT_MAX;
+
+    int h;
+    double makespanEstimate = 0.0;
+    if (considerCache) {
+        if (FFcache_upToDate) {
+            relaxedPlan = FFcache_relaxedPlan;
+            helpfulActions.insert(helpfulActions.end(), FFcache_helpfulActions.begin(), FFcache_helpfulActions.end());
+            h = FFcache_h;
+            makespanEstimate = FFcache_makespanEstimate;
+            cout << "*";
+            cout.flush();
+        } else {
+            h = RPGBuilder::getHeuristic()->getRelaxedPlan(theState.getInnerState(), &(theState.startEventQueue), minTimestamps, theState.timeStamp,
+                                                           extrapolatedMin, extrapolatedMax, timeAtWhichValueIsDefined,                                  // for colin-jair heuristic
+                                                           helpfulActions, relaxedPlan, makespanEstimate, justApplied, tilFrom);
+
+            FFcache_relaxedPlan = relaxedPlan;
+            FFcache_helpfulActions = helpfulActions;
+            FFcache_h = h;
+            FFcache_makespanEstimate = makespanEstimate;
+            FFcache_upToDate = true;
+        }
+    } else {
+        //printState(theState);
+        h = RPGBuilder::getHeuristic()->getRelaxedPlan(theState.getInnerState(), &(theState.startEventQueue), minTimestamps, theState.timeStamp,
+                                                       extrapolatedMin, extrapolatedMax, timeAtWhichValueIsDefined,                                      // for colin-jair heuristic
+                                                       helpfulActions, relaxedPlan, makespanEstimate, justApplied, tilFrom);
+
+    }
+
+    return relaxedPlan;
+}
 
 FF::HTrio FF::calculateHeuristicAndSchedule(ExtendedMinimalState & theState, ExtendedMinimalState * prevState, set<int> & goals, set<int> & goalFluents, ParentData * const incrementalData, list<ActionSegment> & helpfulActions, list<FFEvent> & header, list<FFEvent> & now, const int & stepID, bool considerCache, map<double, list<pair<int, int> > > * justApplied, double tilFrom)
 {
@@ -1704,6 +1783,18 @@ FF::HTrio FF::calculateHeuristicAndSchedule(ExtendedMinimalState & theState, Ext
                                                        helpfulActions, relaxedPlan, makespanEstimate, justApplied, tilFrom);
 
     }
+
+    ///////////////////
+    // ALD
+    cout << "not compression safe" << endl;
+    for(const pair<double, list<ActionSegment> >& s : relaxedPlan)
+    {
+      cout << s.first << ": ";
+      for(const ActionSegment& a : s.second)
+        a.first->write(cout);
+      cout << endl;
+    }
+    ///////////////////
 
     if (h < oldBestH) {
         oldBestH = h;
@@ -4473,10 +4564,14 @@ public:
                         cout << "As it dominates something, or is non-dominated, doing a primary insertion of " << e << " and adding to the pareto list\n";
                     }
                     
-                    toReturn->outerInsertion.first->second.paretoStates.push_front(make_pair(e, e->timeStamp));
-                    toReturn->paretoStateListIterator = toReturn->outerInsertion.first->second.paretoStates.begin();
                     toReturn->innerInsertion = toReturn->outerInsertion.first->second.others.insert(make_pair(e, e->timeStamp));            
-                    assert(toReturn->innerInsertion.second);
+                    if(toReturn->innerInsertion.second)
+                    {
+                      toReturn->outerInsertion.first->second.paretoStates.push_front(make_pair(e, e->timeStamp));
+                      toReturn->paretoStateListIterator = toReturn->outerInsertion.first->second.paretoStates.begin();
+                    }
+                    // ALD: somehow we screwed up identical check?
+                    //assert(toReturn->innerInsertion.second);
                 } else {
                     if (insDebug) {
                         cout << "Secondary insertion of " << e << ": the residual case\n";
@@ -5387,6 +5482,128 @@ void printASList(const list<ActionSegment> & helpfulActions) {
         }
     }
     
+}
+
+set<string> FF::get_relaxed_plan_actions()
+{
+    static bool initCSBase = false;
+
+    if (!initCSBase) {
+        initCSBase = true;
+        const vector<NumericAnalysis::dominance_constraint> & dcs = NumericAnalysis::getDominanceConstraints();
+        const int pneCount = dcs.size();
+        CSBase::ignorableFluents = vector<bool>(pneCount);
+        CSBase::nonDominatedFluent = vector<bool>(pneCount);
+        for (int i = 0; i < pneCount; ++i) {
+            CSBase::ignorableFluents[i] = ((dcs[i] == NumericAnalysis::E_METRICTRACKING) || (dcs[i] == NumericAnalysis::E_IRRELEVANT));
+            CSBase::nonDominatedFluent[i] = (!(CSBase::ignorableFluents[i]) && dcs[i] == NumericAnalysis::E_NODOMINANCE);
+        }
+    }
+
+    if (FF::allowCompressionSafeScheduler) {
+        FF::allowCompressionSafeScheduler = CompressionSafeScheduler::canUseThisScheduler();
+    }
+
+    const bool ffDebug = (Globals::globalVerbosity & 2);
+
+    FFheader_upToDate = false;
+    FFonly_one_successor = false;
+    WAStar = false;
+    set<int> goals;
+    set<int> numericGoals;
+    ExtendedMinimalState initialState;
+
+    {
+        LiteralSet tinitialState;
+        vector<double> tinitialFluents;
+
+        RPGBuilder::getNonStaticInitialState(tinitialState, tinitialFluents);
+
+        initialState.getEditableInnerState().setFacts(tinitialState);
+        initialState.getEditableInnerState().setFacts(tinitialFluents);
+
+        #ifdef STOCHASTICDURATIONS        
+        durationManager->prepareTheInitialState(initialState.getEditableInnerState());        
+        #endif
+                
+        if (ffDebug) {
+            cout << "Initial state has " << initialState.getInnerState().first.size() << " propositional facts and " << tinitialFluents.size() << " non-static fluents\n";
+        }
+        
+    }
+
+
+    {
+        list<Literal*>::iterator gsItr = RPGBuilder::getLiteralGoals().begin();
+        const list<Literal*>::iterator gsEnd = RPGBuilder::getLiteralGoals().end();
+
+        for (; gsItr != gsEnd; ++gsItr) {
+            pair<bool, bool> & currStatic = RPGBuilder::isStatic(*gsItr);
+            if (currStatic.first) {
+                if (!currStatic.second) {
+                    cout << "Static goal " << *(*gsItr) << " resolves to false: no plan can solve this problem\n";
+                    return set<string>();
+                }
+            } else {
+                goals.insert((*gsItr)->getStateID());
+            }
+
+        }
+
+    }
+    {
+        list<pair<int, int> >::iterator gsItr = RPGBuilder::getNumericRPGGoals().begin();
+        const list<pair<int, int> >::iterator gsEnd = RPGBuilder::getNumericRPGGoals().end();
+
+        for (; gsItr != gsEnd; ++gsItr) {
+            if (gsItr->first != -1) {
+                numericGoals.insert(gsItr->first);
+            }
+            if (gsItr->second != -1) {
+                numericGoals.insert(gsItr->second);
+            }
+        }
+    }
+
+    if (ffDebug) {
+        cout << "Solving subproblem\n";
+    }
+
+#ifdef DOUBLESTATEHASH
+    map<ExtendedMinimalState, list<pair<pair<HTrio, bool>, double > >, OldCompareStates> 
+      oldVisitedStates;
+
+    map<ExtendedMinimalState, list<pair<pair<HTrio, bool>, double > >, OldCompareStatesZealously> 
+      oldZealousVisitedStates;    
+#endif    
+
+    auto_ptr<StateHash> visitedStates(getStateHash());
+
+    SearchQueue searchQueue;
+
+    HTrio bestHeuristic;
+    HTrio initialHeuristic;
+
+    SearchQueueItem * const initialSQI = new SearchQueueItem(&initialState, false);
+    list<FFEvent> tEvent;
+    FFheader_upToDate = false;
+    FFonly_one_successor = true;
+    list<pair<double, list<ActionSegment> > > rp = generateRelaxedPlan(initialState, 0, goals, numericGoals, 
+      (ParentData*) 0, initialSQI->helpfulActions, initialSQI->plan, tEvent, -1);
+
+    
+    set<string> to_return;
+    for(const pair<double, list<ActionSegment> >& s : rp)
+    {
+      for(const ActionSegment& a : s.second)
+      {
+        stringstream action;
+        a.first->write(action);
+        to_return.insert(action.str());
+      }
+    }
+
+    return to_return;
 }
 
 Solution FF::search(bool & reachedGoal)

@@ -433,6 +433,11 @@ private:
     static HTrio calculateHeuristicAndCompressionSafeSchedule(ExtendedMinimalState & theState, ExtendedMinimalState * prevState, set<int> & goals, set<int> & goalFluents, list<ActionSegment> & helpfulActions, list<FFEvent> & header, list<FFEvent> & now, const int & stepID, map<double, list<pair<int, int> > > * justApplied = 0, double tilFrom = 0.001);
     static HTrio calculateHeuristicAndSchedule(ExtendedMinimalState & theState, ExtendedMinimalState * prevState, set<int> & goals, set<int> & goalFluents, ParentData * const p, list<ActionSegment> & helpfulActions, list<FFEvent> & header, list<FFEvent> & now, const int & stepID, bool considerCache = false, map<double, list<pair<int, int> > > * justApplied = 0, double tilFrom = 0.001);
 
+    ////////////
+    // ALD
+    static list<pair<double, list<ActionSegment> > > generateRelaxedPlan(ExtendedMinimalState & theState, ExtendedMinimalState * prevState, set<int> & goals, set<int> & goalFluents, ParentData * const incrementalData, list<ActionSegment> & helpfulActions, list<FFEvent> & header, list<FFEvent> & now, const int & stepID, bool considerCache = false, map<double, list<pair<int, int> > > * justApplied = 0, double tilFrom = 0.001);
+    ////////////
+
     static ExtendedMinimalState * applyActionToState(ActionSegment & theAction, const ExtendedMinimalState & parent, const list<FFEvent> & plan);
 
     /** @brief Check that a successor state has made meaningful progress
@@ -502,6 +507,11 @@ public:
     #endif
     //static list<instantiatedOp*> * solveSubproblem(LiteralSet & startingState, vector<pair<PNE*, double> > & startingFluents, SubProblem* const s);
     static Solution search(bool & reachedGoal);
+
+    ///////////////
+    // ALD
+    static set<string> get_relaxed_plan_actions();
+    ///////////////
 
     static list<FFEvent> * doBenchmark(bool & reachedGoal, list<FFEvent> * soln, const bool doLoops = true);
     static list<FFEvent> * reprocessPlan(list<FFEvent> * soln, TemporalConstraints * cons);

@@ -44,9 +44,11 @@
 ////////////
 
 using std::ifstream;
+using std::ofstream;
 using std::cerr;
 using std::endl;
 using std::ostringstream;
+using std::string;
 
 using namespace TIM;
 using namespace Inst;
@@ -85,6 +87,7 @@ void usage(char * argv[])
     cout << "\t" << "-T" << "\t\t" << "Rather than building a partial order, build a total-order\n";
     cout << "\t" << "-a" << "\t\t" << "Plan output file\n";
     cout << "\t" << "-y" << "\t\t" << "Timing output file\n";
+    cout << "\t" << "-x" << "\t\t" << "Relaxed planning\n";
     #ifdef STOCHASTICDURATIONS
     cout << "\t" << "-f<t>" << "\t\t" << "Force a deadline of t on each goal;\n";
     cout << "\t" << "-M<duration manager><samples>" << "\t\t" << "Use the named duration manager and number of samples (default: montecarlo10000)\n";
@@ -133,6 +136,7 @@ int main(int argc, char * argv[])
 
     const char* output_file = 0;
     const char* timing_output_file_name = 0;
+    const char* relaxed_plan_actions_output = 0;
     
     while (argcount < argc && argv[argcount][0] == '-') {
 
@@ -377,6 +381,10 @@ int main(int argc, char * argv[])
                 timing_output_file_name = argv[++argcount];
                 break;
             }
+            case 'x': { // ALD: generate and output relaxed plan actions
+                relaxed_plan_actions_output = argv[++argcount];
+                break;
+            }
             default:
                 cout << "Unrecognised command-line switch '" << argv[argcount][1] << "'\n";
                 usage(argv);
@@ -453,6 +461,18 @@ int main(int argc, char * argv[])
     Solution planAndConstraints;
     
     list<FFEvent> * & spSoln = planAndConstraints.plan;
+
+    if(relaxed_plan_actions_output)
+    {
+      set<string> relaxed_plan_actions = FF::get_relaxed_plan_actions();
+
+      ofstream output(relaxed_plan_actions_output);
+      for(const string& s : relaxed_plan_actions)
+        output << s << endl;
+      
+      return 0;
+    }
+
     if (readInAPlan) {
         spSoln = readPlan(argv[argc - 1]);
         reachesGoals = true;
