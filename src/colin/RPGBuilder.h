@@ -1143,7 +1143,7 @@ protected:
     /** @brief Remove the (linear) continuous effects from the given list, returning them. */
     static LinearEffects * buildLE(list<NumericEffect> & effList, const string & whereEffectsAreFrom);
 
-    static bool considerAndFilter(LiteralSet & initialState, LiteralSet & revisit, const int & operatorID);
+    static bool considerAndFilter(LiteralSet & initialState, LiteralSet & revisit, const int & operatorID, bool* is_eliminated = 0);
     static void postFilterUnreachableActions();
     static void buildMetric(VAL::metric_spec*);
 
@@ -1389,7 +1389,7 @@ public:
     static bool doTemporalAnalysis;
     static bool readPropositionGroups;
 
-    static void initialise();
+    static void initialise(list<string>* relaxed_actions = 0);
 
     static bool nonTemporalProblem() {
         return problemIsNotTemporal;

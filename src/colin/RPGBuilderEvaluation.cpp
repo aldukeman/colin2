@@ -3012,18 +3012,18 @@ public:
                                 if (keepPositive) {
                                     if (effItr->first < 0) {
                                         if (debug) {
-                                            cout << "    * Ignoring decrease with gradient " << effItr->first << endl;
+                                            //cout << "    * Ignoring decrease with gradient " << effItr->first << endl;
                                         } else {
-                                            cout << "    * Keeping increase with gradient " << effItr->first << endl;
+                                            //cout << "    * Keeping increase with gradient " << effItr->first << endl;
                                         } 
                                         continue;
                                     }
                                 } else {
                                     if (effItr->first > 0) {
                                         if (debug) {
-                                            cout << "    * Ignoring increase with gradient " << effItr->first << endl;
+                                            //cout << "    * Ignoring increase with gradient " << effItr->first << endl;
                                         } else {
-                                            cout << "    * Keeping decrease with gradient " << effItr->first << endl;
+                                            //cout << "    * Keeping decrease with gradient " << effItr->first << endl;
                                         } 
                                         
                                         continue;

@@ -58,12 +58,15 @@
 #include "StochasticDurations.h"
 #endif
 
+#include <sstream>;
+
 using namespace TIM;
 using namespace Inst;
 using namespace VAL;
 
 using std::cerr;
 using std::ostringstream;
+using std::stringstream;
 using std::endl;
 using std::ifstream;
 
@@ -215,7 +218,7 @@ public:
             cout << "...cannot be found either in the initial state, as an add effect of an\n";
             cout << " action, or as a timed initial literal.  As such, the problem has been deemed\n";
             cout << "unsolvable.\n";
-            exit(0);
+            exit(1);
         }
     };
 
@@ -2461,7 +2464,7 @@ RPGBuilder::op_type checkIfRogue(TimedPrecEffCollector & c)
     return RPGBuilder::OT_NORMAL_ACTION;
 }
 
-void RPGBuilder::initialise()
+void RPGBuilder::initialise(list<string>* relaxed_actions)
 {
     RPGdebug = (Globals::globalVerbosity & 16);
     SimpleEvaluator::setInitialState();
@@ -3308,10 +3311,20 @@ void RPGBuilder::initialise()
         }
     }
     #endif
-};
 
-
-
+    if(relaxed_actions)
+    {
+      for(unsigned int i = 0; i < operatorCount; ++i)
+      {
+        if(realRogueActions[i] == OT_NORMAL_ACTION)
+        {
+          stringstream output;
+          output << *(getInstantiatedOp(i));
+          relaxed_actions->push_back(output.str());
+        }
+      }
+    }
+}
 
 void RPGBuilder::getInitialState(LiteralSet & initialState, vector<double> & initialFluents)
 {

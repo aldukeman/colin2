@@ -1784,18 +1784,6 @@ FF::HTrio FF::calculateHeuristicAndSchedule(ExtendedMinimalState & theState, Ext
 
     }
 
-    ///////////////////
-    // ALD
-    cout << "not compression safe" << endl;
-    for(const pair<double, list<ActionSegment> >& s : relaxedPlan)
-    {
-      cout << s.first << ": ";
-      for(const ActionSegment& a : s.second)
-        a.first->write(cout);
-      cout << endl;
-    }
-    ///////////////////
-
     if (h < oldBestH) {
         oldBestH = h;
     }

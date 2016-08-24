@@ -1180,7 +1180,7 @@ bool removeFirst(list<T> & from, const T & toRemove)
     return false;
 };
 
-bool RPGBuilder::considerAndFilter(LiteralSet & initialState, LiteralSet & revisit, const int & operatorID)
+bool RPGBuilder::considerAndFilter(LiteralSet & initialState, LiteralSet & revisit, const int & operatorID, bool* is_eliminated)
 {
 
 
@@ -1476,6 +1476,9 @@ bool RPGBuilder::considerAndFilter(LiteralSet & initialState, LiteralSet & revis
     } else {
         if (localDebug) cout << "Keeping it\n";
     }
+
+    if(is_eliminated)
+      *is_eliminated = eliminate;
 
     return revisitUpdated;
 };

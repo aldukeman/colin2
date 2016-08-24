@@ -137,6 +137,7 @@ int main(int argc, char * argv[])
     const char* output_file = 0;
     const char* timing_output_file_name = 0;
     const char* relaxed_plan_actions_output = 0;
+    const char* relaxed_actions_output = 0;
     
     while (argcount < argc && argv[argcount][0] == '-') {
 
@@ -383,6 +384,7 @@ int main(int argc, char * argv[])
             }
             case 'x': { // ALD: generate and output relaxed plan actions
                 relaxed_plan_actions_output = argv[++argcount];
+                relaxed_actions_output = argv[++argcount];
                 break;
             }
             default:
@@ -444,7 +446,8 @@ int main(int argc, char * argv[])
     Globals::optimiseSolutionQuality = (Globals::optimiseSolutionQuality || postHocScheduleToMetric);
     #endif
     
-    RPGBuilder::initialise();
+    list<string> relaxed_actions;
+    RPGBuilder::initialise(&relaxed_actions);
 
     #ifdef POPF3ANALYSIS
     Globals::optimiseSolutionQuality = realOpt;
@@ -466,9 +469,13 @@ int main(int argc, char * argv[])
     {
       set<string> relaxed_plan_actions = FF::get_relaxed_plan_actions();
 
-      ofstream output(relaxed_plan_actions_output);
+      ofstream plan_output(relaxed_plan_actions_output);
       for(const string& s : relaxed_plan_actions)
-        output << s << endl;
+        plan_output << s << endl;
+
+      ofstream actions_output(relaxed_actions_output);
+      for(const string& a : relaxed_actions)
+        actions_output << a << endl;
       
       return 0;
     }
