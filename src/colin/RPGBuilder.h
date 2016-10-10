@@ -32,11 +32,13 @@
 #include <set>
 #include <map>
 #include <limits>
+#include <string>
 
 using std::vector;
 using std::list;
 using std::set;
 using std::map;
+using std::string;
 
 #include "minimalstate.h"
 
@@ -55,6 +57,12 @@ namespace Planner
 
 class RPGHeuristic;
 class StartEvent;
+
+struct ActionLevel
+{
+  set<string> possible_actions;
+  set<string> plan_actions;
+};
 
 struct EpsilonComp {
 
@@ -81,6 +89,7 @@ struct ActionFluentModification {
             : act(a), ts(startOrEnd), openEnd(oe), change(incr), howManyTimes(shots), assignment(ass) {};
 
 };
+
 
 struct InvData;
 class TemporalAnalysis;
@@ -1389,7 +1398,7 @@ public:
     static bool doTemporalAnalysis;
     static bool readPropositionGroups;
 
-    static void initialise(list<string>* relaxed_actions = 0);
+    static void initialise(set<string>* relaxed_actions = 0);
 
     static bool nonTemporalProblem() {
         return problemIsNotTemporal;
@@ -1659,7 +1668,7 @@ public:
                        const vector<double> & minTimestamps, const double & stateTS,
                        const vector<double> & extrapolatedMin, const vector<double> & extrapolatedMax, const vector<double> & timeAtWhichStateVariableBoundsHold,
                        list<ActionSegment> & helpfulActions, list<pair<double, list<ActionSegment> > > & relaxedPlan,
-                       double & finalPlanMakespanEstimate, map<double, list<pair<int, int> > > * justApplied = 0, double tilFrom = 0.001);
+                       double & finalPlanMakespanEstimate, map<double, list<pair<int, int> > > * justApplied = 0, double tilFrom = 0.001, map<double, ActionLevel>* rplan = 0);
 
     void findApplicableActions(const MinimalState & theState, const double & stateTime, list<ActionSegment> & applicableActions);
     void filterApplicableActions(const MinimalState & theState, const double & stateTime, list<ActionSegment> & applicableActions);

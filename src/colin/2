@@ -1631,7 +1631,7 @@ void populateTimestamps(vector<double> & minTimestamps, double & makespan, list<
     }
 }
 
-list<pair<double, list<ActionSegment> > > FF::generateRelaxedPlan(ExtendedMinimalState & theState, ExtendedMinimalState * prevState, set<int> & goals, set<int> & goalFluents, ParentData * const incrementalData, list<ActionSegment> & helpfulActions, list<FFEvent> & header, list<FFEvent> & now, const int & stepID, map<double, ActionLevel>* rplan, bool considerCache, map<double, list<pair<int, int> > > * justApplied, double tilFrom)
+list<pair<double, list<ActionSegment> > > FF::generateRelaxedPlan(ExtendedMinimalState & theState, ExtendedMinimalState * prevState, set<int> & goals, set<int> & goalFluents, ParentData * const incrementalData, list<ActionSegment> & helpfulActions, list<FFEvent> & header, list<FFEvent> & now, const int & stepID, bool considerCache, map<double, list<pair<int, int> > > * justApplied, double tilFrom)
 {
     LPScheduler tryToSchedule(theState.getInnerState(), header, now, stepID, theState.startEventQueue, incrementalData, theState.entriesForAction, (prevState ? &prevState->getInnerState().secondMin : 0), (prevState ? &prevState->getInnerState().secondMax : 0), &(theState.tilComesBefore), scheduleToMetric);
 
@@ -1689,7 +1689,7 @@ list<pair<double, list<ActionSegment> > > FF::generateRelaxedPlan(ExtendedMinima
         } else {
             h = RPGBuilder::getHeuristic()->getRelaxedPlan(theState.getInnerState(), &(theState.startEventQueue), minTimestamps, theState.timeStamp,
                                                            extrapolatedMin, extrapolatedMax, timeAtWhichValueIsDefined,                                  // for colin-jair heuristic
-                                                           helpfulActions, relaxedPlan, makespanEstimate, justApplied, tilFrom, rplan);
+                                                           helpfulActions, relaxedPlan, makespanEstimate, justApplied, tilFrom);
 
             FFcache_relaxedPlan = relaxedPlan;
             FFcache_helpfulActions = helpfulActions;
@@ -1701,7 +1701,8 @@ list<pair<double, list<ActionSegment> > > FF::generateRelaxedPlan(ExtendedMinima
         //printState(theState);
         h = RPGBuilder::getHeuristic()->getRelaxedPlan(theState.getInnerState(), &(theState.startEventQueue), minTimestamps, theState.timeStamp,
                                                        extrapolatedMin, extrapolatedMax, timeAtWhichValueIsDefined,                                      // for colin-jair heuristic
-                                                       helpfulActions, relaxedPlan, makespanEstimate, justApplied, tilFrom, rplan);
+                                                       helpfulActions, relaxedPlan, makespanEstimate, justApplied, tilFrom);
+
     }
 
     return relaxedPlan;
@@ -5529,7 +5530,7 @@ map<double, ActionLevel> FF::get_relaxed_plan()
             if (currStatic.first) {
                 if (!currStatic.second) {
                     cout << "Static goal " << *(*gsItr) << " resolves to false: no plan can solve this problem\n";
-                    return map<double, ActionLevel>();
+                    return set<string>();
                 }
             } else {
                 goals.insert((*gsItr)->getStateID());
@@ -5585,20 +5586,7 @@ map<double, ActionLevel> FF::get_relaxed_plan()
     map<double, ActionLevel> to_return;
 
     list<pair<double, list<ActionSegment> > > rp = generateRelaxedPlan(initialState, 0, goals, numericGoals, 
-      (ParentData*) 0, initialSQI->helpfulActions, initialSQI->plan, tEvent, -1, &to_return);
-
-    for(list<pair<double, list<ActionSegment> > >::const_reference e : rp)
-    {
-      for(const list<ActionSegment>::const_reference s : e.second)
-      {
-        if(s.second == VAL::E_AT_END)
-        {
-          stringstream out;
-          s.first->write(out);
-          to_return[e.first].plan_actions.insert(out.str());
-        }
-      }
-    }
+      (ParentData*) 0, initialSQI->helpfulActions, initialSQI->plan, tEvent, -1, to_return);
 
     return to_return;
 }

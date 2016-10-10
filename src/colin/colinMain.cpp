@@ -110,7 +110,11 @@ int main(int argc, char * argv[])
     FF::steepestDescent = false;
     FF::incrementalExpansion = false;
     FF::invariantRPG = false;
-    FF::timeWAStar = false;
+    FF::WAStar = false;
+    FF::doubleU = 4.00;
+    FF::timeWAStar = true;
+    FF::biasG = false;
+    FF::openListOrderLowMakespanFirst = false;
     LPScheduler::hybridBFLP = false;
 
     bool benchmark = false;
@@ -446,7 +450,7 @@ int main(int argc, char * argv[])
     Globals::optimiseSolutionQuality = (Globals::optimiseSolutionQuality || postHocScheduleToMetric);
     #endif
     
-    list<string> relaxed_actions;
+    set<string> relaxed_actions;
     RPGBuilder::initialise(&relaxed_actions);
 
     #ifdef POPF3ANALYSIS
@@ -467,15 +471,30 @@ int main(int argc, char * argv[])
 
     if(relaxed_plan_actions_output)
     {
-      set<string> relaxed_plan_actions = FF::get_relaxed_plan_actions();
+      map<double, ActionLevel> relaxed_plan = FF::get_relaxed_plan();
 
       ofstream plan_output(relaxed_plan_actions_output);
-      for(const string& s : relaxed_plan_actions)
-        plan_output << s << endl;
-
       ofstream actions_output(relaxed_actions_output);
-      for(const string& a : relaxed_actions)
-        actions_output << a << endl;
+      for(map<double, ActionLevel>::const_reference e : relaxed_plan)
+      {
+        plan_output << e.first << endl;
+        for(const string& s : e.second.plan_actions)
+          plan_output << s << endl;
+
+        actions_output << e.first << endl;
+        for(const string& a : e.second.possible_actions)
+          actions_output << a << endl;
+      }
+
+
+      if(timing_output_file_name)
+      {
+        struct rusage r;
+        getrusage(RUSAGE_SELF, &r);
+        std::chrono::system_clock::time_point end = std::chrono::system_clock::now();
+        std::ofstream output(timing_output_file_name);
+        output << r.ru_maxrss << "," << std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count();
+      }
       
       return 0;
     }

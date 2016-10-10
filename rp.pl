@@ -1,8 +1,8 @@
 #!/usr/bin/perl -w
 use File::Basename;
 
-if ((scalar @ARGV) != 4) {
-	print "Usage: rp.pl <domain> <problem> <rplan> <rplan_actions>\n";
+if ((scalar @ARGV) != 5) {
+	print "Usage: rp.pl <domain> <problem> <rplan> <rplan_actions> <timing>\n";
 	exit(1);
 }
 
@@ -11,6 +11,7 @@ $dom = shift @ARGV;
 $prob = shift @ARGV;
 $rp = shift @ARGV;
 $rp_actions = shift @ARGV;
+$timing = shift @ARGV;
 
 if (!(-e $dom)) {
 	print "Domain file $dom not found\n";
@@ -22,4 +23,4 @@ if (!(-e $prob)) {
   exit(1);
 }
 
-exec("$dir/bin/colin-clp", "-x", "$rp", "$rp_actions", "$dom", "$prob")
+exec("$dir/bin/colin-clp", "-x", "$rp", "$rp_actions", "-y", "$timing", "$dom", "$prob")

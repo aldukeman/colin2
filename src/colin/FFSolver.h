@@ -35,16 +35,19 @@
 
 #include <map>
 #include <list>
+#include <string>
+#include <set>
 
 using std::map;
+using std::set;
 using std::list;
+using std::string;
 
 namespace Planner
 {
 
 class SearchQueueItem;
 class ParentData;
-
 
 struct StartEvent {
     int actID;
@@ -435,7 +438,7 @@ private:
 
     ////////////
     // ALD
-    static list<pair<double, list<ActionSegment> > > generateRelaxedPlan(ExtendedMinimalState & theState, ExtendedMinimalState * prevState, set<int> & goals, set<int> & goalFluents, ParentData * const incrementalData, list<ActionSegment> & helpfulActions, list<FFEvent> & header, list<FFEvent> & now, const int & stepID, bool considerCache = false, map<double, list<pair<int, int> > > * justApplied = 0, double tilFrom = 0.001);
+    static list<pair<double, list<ActionSegment> > > generateRelaxedPlan(ExtendedMinimalState & theState, ExtendedMinimalState * prevState, set<int> & goals, set<int> & goalFluents, ParentData * const incrementalData, list<ActionSegment> & helpfulActions, list<FFEvent> & header, list<FFEvent> & now, const int & stepID, map<double, ActionLevel>* rplan = 0, bool considerCache = false, map<double, list<pair<int, int> > > * justApplied = 0, double tilFrom = 0.001);
     ////////////
 
     static ExtendedMinimalState * applyActionToState(ActionSegment & theAction, const ExtendedMinimalState & parent, const list<FFEvent> & plan);
@@ -510,7 +513,7 @@ public:
 
     ///////////////
     // ALD
-    static set<string> get_relaxed_plan_actions();
+    static map<double, ActionLevel> get_relaxed_plan();
     ///////////////
 
     static list<FFEvent> * doBenchmark(bool & reachedGoal, list<FFEvent> * soln, const bool doLoops = true);

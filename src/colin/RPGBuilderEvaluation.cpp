@@ -57,6 +57,7 @@ using std::cerr;
 using std::endl;
 using std::vector;
 using std::ostringstream;
+using std::stringstream;
 using std::ofstream;
 
 namespace Planner
@@ -7677,12 +7678,13 @@ int RPGHeuristic::getRelaxedPlan(const MinimalState & theState, const list<Start
                                  const vector<double> & minTimestamps, const double & stateTS,
                                  const vector<double> & extrapolatedMin, const vector<double> & extrapolatedMax, const vector<double> & timeAtWhichValueIsDefined,
                                  list<ActionSegment> & helpfulActions, list<pair<double, list<ActionSegment> > > & relaxedPlan,double & finalPlanMakespanEstimate,
-                                 map<double, list<pair<int, int> > > * justApplied, double tilFrom)
+                                 map<double, list<pair<int, int> > > * justApplied, double tilFrom, map<double, ActionLevel>* rplan)
 {
 
 
 
     const bool evaluateDebug = Globals::globalVerbosity & 64;
+    //const bool evaluateDebug = true;
 
     d->setDebugFlag(evaluateDebug);
     
@@ -8100,6 +8102,20 @@ int RPGHeuristic::getRelaxedPlan(const MinimalState & theState, const list<Start
                         if (actIsOpen) cout << "open ";
                         cout << "end effect of " << actToPass << " " << *(RPGBuilder::getInstantiatedOp(actToPass)) << "\n";
                     }
+
+                    // ALD
+                    if(rplan)
+                    {
+                      const double time = cTime.toDouble();
+//                      const double epsilon = EpsilonResolutionTimestamp::epsilon().toDouble();
+//                      if(fmod(time, epsilon) == 0.0) // if these are start actions
+                      {
+                        stringstream out;
+                        RPGBuilder::getInstantiatedOp(actToPass)->write(out);
+                        (*rplan)[time].possible_actions.insert(out.str());
+                      }
+                    }
+    
                     if (d->applyEndEffectNow(payload.get(), actToPass, actIsOpen, cTime) && breakOnGoalsAndEnds) break;
                 }
             }
@@ -8188,6 +8204,7 @@ int RPGHeuristic::getRelaxedPlan(const MinimalState & theState, const list<Start
                         if (!(--(nrItr->second))) {
                             payload->forbiddenStart.erase(nrItr);
                             if (!payload->startPreconditionCounts[*fItr]) {
+// ALD: NO LONGER FORBIDDEN
                                 if (evaluateDebug) cout << "-Start of " << *(RPGBuilder::getInstantiatedOp(*fItr)) << " is no longer forbidden, and its preconditions are true\n";
                                 d->noLongerForbidden.push_back(pair<int, VAL::time_spec>(*fItr, VAL::E_AT_START));
                                 spawn = true;
@@ -8266,7 +8283,7 @@ int RPGHeuristic::getRelaxedPlan(const MinimalState & theState, const list<Start
                     #endif
                         failedToMeetDeadline = true;
                         break;
-                    }
+                    } /* } */
 
                 }
             }
@@ -8596,7 +8613,7 @@ int RPGHeuristic::getRelaxedPlan(const MinimalState & theState, const list<Start
                             cout << "- TIL " << aItr->first << endl;
                         }
                     }
-                }
+                } /* } */
             }
             
             if (startEventQueue) {
@@ -8658,7 +8675,6 @@ int RPGHeuristic::getRelaxedPlan(const MinimalState & theState, const list<Start
                     }
                 }
             }
-
         }
         if (evaluateDebug) cout << "Leaving getRelaxedPlan()\n";
         return -1;

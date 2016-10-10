@@ -58,7 +58,7 @@
 #include "StochasticDurations.h"
 #endif
 
-#include <sstream>;
+#include <sstream>
 
 using namespace TIM;
 using namespace Inst;
@@ -2464,7 +2464,7 @@ RPGBuilder::op_type checkIfRogue(TimedPrecEffCollector & c)
     return RPGBuilder::OT_NORMAL_ACTION;
 }
 
-void RPGBuilder::initialise(list<string>* relaxed_actions)
+void RPGBuilder::initialise(set<string>* relaxed_actions)
 {
     RPGdebug = (Globals::globalVerbosity & 16);
     SimpleEvaluator::setInitialState();
@@ -3320,7 +3320,7 @@ void RPGBuilder::initialise(list<string>* relaxed_actions)
         {
           stringstream output;
           output << *(getInstantiatedOp(i));
-          relaxed_actions->push_back(output.str());
+          relaxed_actions->insert(output.str());
         }
       }
     }
