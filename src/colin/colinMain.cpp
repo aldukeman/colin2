@@ -391,6 +391,10 @@ int main(int argc, char * argv[])
                 relaxed_actions_output = argv[++argcount];
                 break;
             }
+            case 'j': { // ALD: check if a relaxed plan for the problem exists
+                Globals::rpOnly = true;
+                break;
+            }
             default:
                 cout << "Unrecognised command-line switch '" << argv[argcount][1] << "'\n";
                 usage(argv);
@@ -469,9 +473,13 @@ int main(int argc, char * argv[])
     
     list<FFEvent> * & spSoln = planAndConstraints.plan;
 
-    if(relaxed_plan_actions_output)
+    if(relaxed_plan_actions_output || Globals::rpOnly)
     {
       map<double, ActionLevel> relaxed_plan = FF::get_relaxed_plan();
+
+      // don't need output
+      if(Globals::rpOnly)
+        return 0;
 
       ofstream plan_output(relaxed_plan_actions_output);
       ofstream actions_output(relaxed_actions_output);

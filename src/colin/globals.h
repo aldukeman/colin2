@@ -294,8 +294,11 @@ public:
      *  @see LPScheduler
      */
     static bool profileScheduling;
-    
-    
+
+    /** @brief True if only testing for relaxed plan, false otherwise.
+     */
+    static bool rpOnly;
+
     #ifdef ENABLE_DEBUGGING_HOOKS
 
     /** @brief A vector of which actions definitely must be kept, i.e. not pruned in preprocessing.
@@ -320,7 +323,7 @@ public:
      *  during the plan passed to the planner, the indices remaining actions
      */
     static list<ActionSegment> remainingActionsInPlan;
-    
+
     /** @brief Read in <code>planFilename</code> and note that its actions must not be pruned in preprocessing.
      *
      *  @see actionHasToBeKept
