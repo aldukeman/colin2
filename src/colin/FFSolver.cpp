@@ -5591,11 +5591,13 @@ map<double, ActionLevel> FF::get_relaxed_plan()
     {
       for(const list<ActionSegment>::const_reference s : e.second)
       {
-        if(s.second == VAL::E_AT_END)
+        // possible fix for working with classical planning problems
+        //if(s.second == VAL::E_AT_END)
+        if(s.second == VAL::E_AT_START)
         {
           stringstream out;
           s.first->write(out);
-          to_return[e.first].plan_actions.insert(out.str());
+          to_return[e.first + 0.001].plan_actions.insert(out.str());
         }
       }
     }
@@ -6089,6 +6091,7 @@ Solution FF::search(bool & reachedGoal)
 
     if (!bestFirstSearch) {
         cout << "\nProblem unsolvable by EHC, and best-first search has been disabled\n";
+        exit(2);
 
         reachedGoal = false;        
         return workingBestSolution;
